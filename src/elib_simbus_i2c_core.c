@@ -12,18 +12,6 @@
 static inline void i2c_delay(elib_simbus_i2c_ctx_t *ctx)
 {
     ctx->delay_us(ctx->delay_num);
-    ctx->wait_rounds++;
-    if (ctx->wait_rounds > ctx->max_wait) {
-        ctx->bit_flags.timeout = 1;
-    }
-}
-
-static inline elib_simbus_err_t i2c_check_timeout(elib_simbus_i2c_ctx_t *ctx)
-{
-    if (ctx->bit_flags.timeout) {
-        return ELIB_SIMBUS_ERR_TIMEOUT;
-    }
-    return ELIB_SIMBUS_OK;
 }
 
 static inline void i2c_scl_low(elib_simbus_i2c_ctx_t *ctx)
@@ -95,13 +83,25 @@ static uint8_t i2c_write_byte(elib_simbus_i2c_ctx_t *ctx, uint8_t byte)
         i2c_delay(ctx);
     }
 
+    /* ACK phase: release SDA, raise SCL, poll SDA with timeout */
     i2c_sda_release(ctx);
     i2c_delay(ctx);
     i2c_scl_high(ctx);
     i2c_delay(ctx);
-    uint8_t ack = i2c_sda_read(ctx);
-    i2c_scl_low(ctx);
 
+    ctx->wait_rounds = 0;
+    uint8_t ack = i2c_sda_read(ctx);
+    while (ack != 0) {
+        if (ctx->wait_rounds >= ctx->max_wait) {
+            ctx->bit_flags.timeout = 1;
+            break;
+        }
+        ctx->delay_us(ctx->delay_num);
+        ctx->wait_rounds++;
+        ack = i2c_sda_read(ctx);
+    }
+
+    i2c_scl_low(ctx);
     return ack;
 }
 
@@ -194,26 +194,23 @@ elib_simbus_err_t elib_simbus_i2c_write(
         return ELIB_SIMBUS_OK;
     }
 
-    ctx->wait_rounds = 0;
     ctx->bit_flags.timeout = 0;
 
     const uint8_t *buf = (const uint8_t *)data;
 
     i2c_start(ctx);
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
-
     if (i2c_write_byte(ctx, (uint8_t)(dev_addr << 1))) {
         i2c_stop(ctx);
+        if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
         return ELIB_SIMBUS_ERR_NACK;
     }
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     for (uint32_t i = 0; i < len; i++) {
         if (i2c_write_byte(ctx, buf[i])) {
             i2c_stop(ctx);
+            if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
             return ELIB_SIMBUS_ERR_NACK;
         }
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     i2c_stop(ctx);
@@ -240,23 +237,19 @@ elib_simbus_err_t elib_simbus_i2c_read(
         return ELIB_SIMBUS_OK;
     }
 
-    ctx->wait_rounds = 0;
     ctx->bit_flags.timeout = 0;
 
     uint8_t *buf = (uint8_t *)data;
 
     i2c_start(ctx);
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
-
     if (i2c_write_byte(ctx, (uint8_t)((dev_addr << 1) | 1))) {
         i2c_stop(ctx);
+        if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
         return ELIB_SIMBUS_ERR_NACK;
     }
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     for (uint32_t i = 0; i < len; i++) {
         buf[i] = i2c_read_byte(ctx, (uint8_t)((i == len - 1) ? 1 : 0));
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     i2c_stop(ctx);
@@ -282,35 +275,32 @@ elib_simbus_err_t elib_simbus_i2c_write_mem(
         return ELIB_SIMBUS_ERR_EXCEED_MAX;
     }
 
-    ctx->wait_rounds = 0;
     ctx->bit_flags.timeout = 0;
 
     const uint8_t *buf = (const uint8_t *)data;
 
     i2c_start(ctx);
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
-
     if (i2c_write_byte(ctx, (uint8_t)(dev_addr << 1))) {
         i2c_stop(ctx);
+        if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
         return ELIB_SIMBUS_ERR_NACK;
     }
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     for (int32_t i = (int32_t)mem_addr_len - 1; i >= 0; i--) {
         uint8_t addr_byte = (uint8_t)((mem_addr >> ((uint32_t)i * 8)) & 0xFF);
         if (i2c_write_byte(ctx, addr_byte)) {
             i2c_stop(ctx);
+            if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
             return ELIB_SIMBUS_ERR_NACK;
         }
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     for (uint32_t i = 0; i < len; i++) {
         if (i2c_write_byte(ctx, buf[i])) {
             i2c_stop(ctx);
+            if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
             return ELIB_SIMBUS_ERR_NACK;
         }
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     i2c_stop(ctx);
@@ -339,41 +329,36 @@ elib_simbus_err_t elib_simbus_i2c_read_mem(
         return ELIB_SIMBUS_OK;
     }
 
-    ctx->wait_rounds = 0;
     ctx->bit_flags.timeout = 0;
 
     uint8_t *buf = (uint8_t *)data;
 
     i2c_start(ctx);
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
-
     if (i2c_write_byte(ctx, (uint8_t)(dev_addr << 1))) {
         i2c_stop(ctx);
+        if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
         return ELIB_SIMBUS_ERR_NACK;
     }
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     for (int32_t i = (int32_t)mem_addr_len - 1; i >= 0; i--) {
         uint8_t addr_byte = (uint8_t)((mem_addr >> ((uint32_t)i * 8)) & 0xFF);
         if (i2c_write_byte(ctx, addr_byte)) {
             i2c_stop(ctx);
+            if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
             return ELIB_SIMBUS_ERR_NACK;
         }
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     i2c_start(ctx);
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     if (i2c_write_byte(ctx, (uint8_t)((dev_addr << 1) | 1))) {
         i2c_stop(ctx);
+        if (ctx->bit_flags.timeout) return ELIB_SIMBUS_ERR_TIMEOUT;
         return ELIB_SIMBUS_ERR_NACK;
     }
-    if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
 
     for (uint32_t i = 0; i < len; i++) {
         buf[i] = i2c_read_byte(ctx, (uint8_t)((i == len - 1) ? 1 : 0));
-        if (i2c_check_timeout(ctx)) return ELIB_SIMBUS_ERR_TIMEOUT;
     }
 
     i2c_stop(ctx);

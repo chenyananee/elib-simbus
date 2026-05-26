@@ -370,7 +370,8 @@ static void test_write_nack(void)
     expect_dev_ack = 0;
 
     uint8_t d = 0x55;
-    assert(elib_simbus_i2c_write(&ctx, 0x50, &d, 1, 1) == ELIB_SIMBUS_ERR_NACK);
+    elib_simbus_err_t e = elib_simbus_i2c_write(&ctx, 0x50, &d, 1, 1);
+    assert(e == ELIB_SIMBUS_ERR_TIMEOUT);
 }
 
 static void test_read_success(void)
@@ -401,7 +402,7 @@ static void test_read_nack(void)
     expect_dev_ack = 0;
 
     uint8_t buf[1] = {0};
-    assert(elib_simbus_i2c_read(&ctx, 0x50, buf, 1, 1) == ELIB_SIMBUS_ERR_NACK);
+    assert(elib_simbus_i2c_read(&ctx, 0x50, buf, 1, 1) == ELIB_SIMBUS_ERR_TIMEOUT);
 }
 
 static void test_write_mem_success(void)
@@ -448,9 +449,9 @@ static void test_read_mem_success(void)
 
 static void test_timeout(void)
 {
-    /* max_wait=1 → every delay_us call is a round, one byte = ~27 rounds */
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 1,
+    elib_simbus_i2c_init(&ctx, 0, 1, 1, 3,
         cb_write, cb_read, cb_setdir, cb_delay);
+    expect_dev_ack = 0;
 
     uint8_t d = 0x55;
     assert(elib_simbus_i2c_write(&ctx, 0x50, &d, 1, 1) == ELIB_SIMBUS_ERR_TIMEOUT);

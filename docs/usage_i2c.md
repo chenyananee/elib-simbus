@@ -218,12 +218,18 @@ SCL:  __|‾‾|__|‾‾|__|‾‾|__|‾‾|__
 
 ### 超时机制
 
-每次 `delay_us(delay_num)` 调用计为 1 轮，整笔操作累加。超过 `max_wait` 时设置 `bit_flags.timeout`，后续任何检查点返回 `ELIB_SIMBUS_ERR_TIMEOUT`。
+超时仅作用于 **等待从机 ACK** 阶段。发送完每个字节（地址或数据）后，主机释放 SDA、拉高 SCL，然后轮询 SDA 引脚：
 
-大致消耗：
-- START：4 轮
-- 每字节（含 ACK）：~27 轮
-- STOP：3 轮
-- 写 3 字节：`4 + 27×4 + 3 ≈ 115` 轮
+```
+wait_rounds = 0
+loop:
+  read SDA
+  if SDA == 0 → ACK 收到，继续
+  if wait_rounds >= max_wait → 超时，置 timeout 标志，退出
+  delay_us(delay_num)
+  wait_rounds++
+```
 
-默认 `max_wait = 100` 适合短事务。长事务请显式设置更大的值。
+即每个字节的 ACK 阶段最多等待 `max_wait` 个 `delay_num` 周期。若从机始终不应答（如总线上无设备），超时后返回 `ELIB_SIMBUS_ERR_TIMEOUT`。
+
+默认 `max_wait = 100`，大部分从机应在 1-2 轮内回复 ACK。
