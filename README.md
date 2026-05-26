@@ -7,10 +7,9 @@
 | 模块 | 头文件 | 说明 | 用法文档 |
 |------|--------|------|----------|
 | err | `elib_simbus_err.h` | 统一错误码 | — |
-
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
-| uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | — |
+| uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | [docs/usage_uart.md](docs/usage_uart.md) |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -21,14 +20,20 @@ elib-simbus/
 ├── include/
 │   ├── elib_simbus.h                  # 伞形头文件
 │   ├── elib_simbus_err.h              # 错误码
-│   └── elib_simbus_i2c.h              # I2C 模块
+│   ├── elib_simbus_i2c.h              # I2C 模块
+│   ├── elib_simbus_spi.h              # SPI 模块
+│   └── elib_simbus_uart.h             # UART 模块
 ├── src/
-│   ├── elib_simbus_i2c_core.h         # I2C 内部桥接头
-│   └── elib_simbus_i2c_core.c         # I2C 实现
+│   ├── elib_simbus_{i2c,spi,uart}_core.h   # 内部桥接头
+│   └── elib_simbus_{i2c,spi,uart}_core.c   # 实现
 ├── test/
-│   └── test_elib_simbus_i2c.c         # 单元测试
+│   ├── test_elib_simbus_i2c.c         # 23 个 I2C 测试
+│   ├── test_elib_simbus_spi.c         # 14 个 SPI 测试
+│   └── test_elib_simbus_uart.c        # 19 个 UART 测试
 ├── docs/
-│   └── usage_i2c.md                   # I2C 用法文档
+│   ├── usage_i2c.md                   # I2C 用法
+│   ├── usage_spi.md                   # SPI 用法
+│   └── usage_uart.md                  # UART 用法
 ├── LICENSE
 └── README.md
 ```
@@ -39,7 +44,7 @@ elib-simbus/
 
 | 函数 | 说明 |
 |------|------|
-| `elib_simbus_i2c_init(ctx, scl_pin, sda_pin, delay_num, max_wait, io_write, io_read, io_setdir, delay_us)` | 初始化 |
+| `elib_simbus_i2c_init(ctx, cfg)` | 初始化 |
 | `elib_simbus_i2c_deinit(ctx)` | 反初始化 |
 | `elib_simbus_i2c_write(ctx, dev_addr, data, len, max_len)` | 写数据到从机 |
 | `elib_simbus_i2c_read(ctx, dev_addr, data, len, max_len)` | 从从机读数据 |
@@ -49,8 +54,17 @@ elib-simbus/
 ## 构建与测试
 
 ```bash
-gcc -std=c99 -Wall -Wextra -Iinclude -o test_elib_simbus_i2c \
-  test/test_elib_simbus_i2c.c src/elib_simbus_i2c_core.c && ./test_elib_simbus_i2c
+# I2C
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_i2c \
+  test/test_elib_simbus_i2c.c src/elib_simbus_i2c_core.c && ./test_i2c
+
+# SPI
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_spi \
+  test/test_elib_simbus_spi.c src/elib_simbus_spi_core.c && ./test_spi
+
+# UART
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_uart \
+  test/test_elib_simbus_uart.c src/elib_simbus_uart_core.c && ./test_uart
 ```
 
 ### spi — SPI 主机位敲模拟
