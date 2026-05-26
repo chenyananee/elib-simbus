@@ -7,7 +7,7 @@
 | 模块 | 头文件 | 说明 | 用法文档 |
 |------|--------|------|----------|
 | err | `elib_simbus_err.h` | 统一错误码 | — |
-| util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED | — |
+
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
 | uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | — |
@@ -21,12 +21,10 @@ elib-simbus/
 ├── include/
 │   ├── elib_simbus.h                  # 伞形头文件
 │   ├── elib_simbus_err.h              # 错误码
-│   ├── elib_simbus_util.h             # 快捷宏
 │   └── elib_simbus_i2c.h              # I2C 模块
 ├── src/
 │   ├── elib_simbus_i2c_core.h         # I2C 内部桥接头
-│   ├── elib_simbus_i2c_core.c         # I2C 实现
-│   └── elib_simbus_util_core.h        # util 内部桥接头
+│   └── elib_simbus_i2c_core.c         # I2C 实现
 ├── test/
 │   └── test_elib_simbus_i2c.c         # 单元测试
 ├── docs/
