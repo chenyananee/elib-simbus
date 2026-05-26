@@ -1,0 +1,10 @@
+/* elib_simbus.h - SimBus Umbrella Header */
+
+#ifndef ELIB_SIMBUS_H
+#define ELIB_SIMBUS_H
+
+#include "elib_simbus_util.h"
+#include "elib_simbus_err.h"
+#include "elib_simbus_i2c.h"
+
+#endif /* ELIB_SIMBUS_H */

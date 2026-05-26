@@ -1,0 +1,7 @@
+.omc/
+docs/superpowers/
+.claude/
+*.exe
+/build/
+/test_elib_simbus_i2c
+/test_elib_simbus_*
