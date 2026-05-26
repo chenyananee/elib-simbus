@@ -17,7 +17,7 @@ extern "C" {
 typedef void (*elib_simbus_ws2812_io_write_t)(uint8_t pin, uint8_t level);
 typedef uint8_t (*elib_simbus_ws2812_io_read_t)(uint8_t pin);
 typedef void (*elib_simbus_ws2812_io_setdir_t)(uint8_t pin, uint8_t dir);
-typedef void (*elib_simbus_ws2812_delay_us_t)(uint32_t us);
+typedef void (*elib_simbus_ws2812_delay_ns_t)(uint32_t ns);
 
 /* ------------------------------------------------------------------ */
 /*  Configuration                                                      */
@@ -25,16 +25,16 @@ typedef void (*elib_simbus_ws2812_delay_us_t)(uint32_t us);
 
 typedef struct {
     uint8_t  dq_pin;
-    uint32_t t0h;               /* 0-code high time (µs) */
-    uint32_t t0l;               /* 0-code low time  (µs) */
-    uint32_t t1h;               /* 1-code high time (µs) */
-    uint32_t t1l;               /* 1-code low time  (µs) */
-    uint32_t reset_us;          /* reset low time   (µs) */
+    uint32_t t0h;               /* 0-code high time (ns) */
+    uint32_t t0l;               /* 0-code low time  (ns) */
+    uint32_t t1h;               /* 1-code high time (ns) */
+    uint32_t t1l;               /* 1-code low time  (ns) */
+    uint32_t reset_ns;          /* reset low time   (ns) */
 
     elib_simbus_ws2812_io_write_t  io_write;
     elib_simbus_ws2812_io_read_t   io_read;
     elib_simbus_ws2812_io_setdir_t io_setdir;
-    elib_simbus_ws2812_delay_us_t  delay_us;
+    elib_simbus_ws2812_delay_ns_t  delay_ns;
 } elib_simbus_ws2812_cfg_t;
 
 /* ------------------------------------------------------------------ */
@@ -47,12 +47,12 @@ typedef struct {
     uint32_t t0l;
     uint32_t t1h;
     uint32_t t1l;
-    uint32_t reset_us;
+    uint32_t reset_ns;
 
     elib_simbus_ws2812_io_write_t  io_write;
     elib_simbus_ws2812_io_read_t   io_read;
     elib_simbus_ws2812_io_setdir_t io_setdir;
-    elib_simbus_ws2812_delay_us_t  delay_us;
+    elib_simbus_ws2812_delay_ns_t  delay_ns;
 
     struct {
         uint8_t initialized : 1;

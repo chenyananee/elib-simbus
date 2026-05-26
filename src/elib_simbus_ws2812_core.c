@@ -3,11 +3,11 @@
 #include "elib_simbus_ws2812_core.h"
 #include <stddef.h>
 
-#define ELIB_SIMBUS_WS2812_DEFAULT_T0H  1
-#define ELIB_SIMBUS_WS2812_DEFAULT_T0L  1
-#define ELIB_SIMBUS_WS2812_DEFAULT_T1H  1
-#define ELIB_SIMBUS_WS2812_DEFAULT_T1L  1
-#define ELIB_SIMBUS_WS2812_DEFAULT_RESET 50
+#define ELIB_SIMBUS_WS2812_DEFAULT_T0H    350
+#define ELIB_SIMBUS_WS2812_DEFAULT_T0L    800
+#define ELIB_SIMBUS_WS2812_DEFAULT_T1H    700
+#define ELIB_SIMBUS_WS2812_DEFAULT_T1L    600
+#define ELIB_SIMBUS_WS2812_DEFAULT_RESET 55000
 
 /* ------------------------------------------------------------------ */
 /*  Internal helpers                                                    */
@@ -34,14 +34,14 @@ static void send_bit(elib_simbus_ws2812_ctx_t *ctx, uint8_t bit)
 {
     if (bit) {
         pin_high(ctx);
-        ctx->delay_us(ctx->t1h);
+        ctx->delay_ns(ctx->t1h);
         pin_low(ctx);
-        ctx->delay_us(ctx->t1l);
+        ctx->delay_ns(ctx->t1l);
     } else {
         pin_high(ctx);
-        ctx->delay_us(ctx->t0h);
+        ctx->delay_ns(ctx->t0h);
         pin_low(ctx);
-        ctx->delay_us(ctx->t0l);
+        ctx->delay_ns(ctx->t0l);
     }
 }
 
@@ -55,7 +55,7 @@ elib_simbus_err_t elib_simbus_ws2812_init(
 {
     if (ctx == NULL || cfg == NULL ||
         cfg->io_write == NULL || cfg->io_read == NULL ||
-        cfg->io_setdir == NULL || cfg->delay_us == NULL) {
+        cfg->io_setdir == NULL || cfg->delay_ns == NULL) {
         return ELIB_SIMBUS_ERR_INVALID_PARAM;
     }
 
@@ -64,11 +64,11 @@ elib_simbus_err_t elib_simbus_ws2812_init(
     ctx->t0l      = (cfg->t0l == 0) ? ELIB_SIMBUS_WS2812_DEFAULT_T0L : cfg->t0l;
     ctx->t1h      = (cfg->t1h == 0) ? ELIB_SIMBUS_WS2812_DEFAULT_T1H : cfg->t1h;
     ctx->t1l      = (cfg->t1l == 0) ? ELIB_SIMBUS_WS2812_DEFAULT_T1L : cfg->t1l;
-    ctx->reset_us = (cfg->reset_us == 0) ? ELIB_SIMBUS_WS2812_DEFAULT_RESET : cfg->reset_us;
+    ctx->reset_ns = (cfg->reset_ns == 0) ? ELIB_SIMBUS_WS2812_DEFAULT_RESET : cfg->reset_ns;
     ctx->io_write = cfg->io_write;
     ctx->io_read  = cfg->io_read;
     ctx->io_setdir = cfg->io_setdir;
-    ctx->delay_us = cfg->delay_us;
+    ctx->delay_ns = cfg->delay_ns;
     ctx->bit_flags.initialized = 1;
 
     return ELIB_SIMBUS_OK;
@@ -99,7 +99,7 @@ elib_simbus_err_t elib_simbus_ws2812_send(
 
     /* Reset: pull low, hold, release */
     pin_low(ctx);
-    ctx->delay_us(ctx->reset_us);
+    ctx->delay_ns(ctx->reset_ns);
     pin_release(ctx);
 
     return ELIB_SIMBUS_OK;
@@ -136,7 +136,7 @@ elib_simbus_err_t elib_simbus_ws2812_send_rgb(
 
     /* Reset */
     pin_low(ctx);
-    ctx->delay_us(ctx->reset_us);
+    ctx->delay_ns(ctx->reset_ns);
     pin_release(ctx);
 
     return ELIB_SIMBUS_OK;
