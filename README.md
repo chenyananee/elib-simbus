@@ -10,6 +10,7 @@
 | util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED | — |
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
+| uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | — |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -65,6 +66,17 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_elib_simbus_i2c \
 | `elib_simbus_spi_read(ctx, data, len, max_len)` | 只读（发送 dummy byte）|
 | `elib_simbus_spi_cs_low(ctx)` | 断言片选（拉低 CS）|
 | `elib_simbus_spi_cs_high(ctx)` | 取消片选（拉高 CS）|
+
+### uart — UART 位敲收发
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_uart_init(ctx, cfg)` | 初始化 |
+| `elib_simbus_uart_deinit(ctx)` | 反初始化 |
+| `elib_simbus_uart_putchar(ctx, byte)` | 发送 1 字节 |
+| `elib_simbus_uart_getchar(ctx)` | 接收 1 字节（返回 -1 超时）|
+| `elib_simbus_uart_write(ctx, data, len, max_len)` | 发送多字节 |
+| `elib_simbus_uart_read(ctx, data, len, max_len)` | 接收多字节（返回实收数）|
 
 ## 错误码
 
