@@ -9,7 +9,7 @@
 | err | `elib_simbus_err.h` | 统一错误码 | — |
 | util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED | — |
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
-| spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | — |
+| spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
