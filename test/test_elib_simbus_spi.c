@@ -75,7 +75,7 @@ static void test_init_valid(void)
     elib_simbus_err_t err = elib_simbus_spi_init(&ctx, &(elib_simbus_spi_cfg_t){
         .sclk_pin = PIN_SCLK, .mosi_pin = PIN_MOSI,
         .miso_pin = PIN_MISO, .cs_pin = PIN_CS,
-        .delay_num = 1, .max_wait = 0, .mode = 0,
+        .delay_num = 1, .mode = 0,
         .io_write = mock_cb_write, .io_read = mock_cb_read,
         .io_setdir = mock_cb_setdir, .delay_us = mock_cb_delay });
     assert(err == ELIB_SIMBUS_OK);
@@ -131,7 +131,7 @@ static void test_init_invalid_mode(void)
 {
     elib_simbus_err_t err = elib_simbus_spi_init(&ctx, &(elib_simbus_spi_cfg_t){
         .sclk_pin=0,.mosi_pin=1,.miso_pin=2,.cs_pin=3,
-        .delay_num=1,.max_wait=0,.mode=4,
+        .delay_num=1,.mode=4,
         .io_write=mock_cb_write,.io_read=mock_cb_read,
         .io_setdir=mock_cb_setdir,.delay_us=mock_cb_delay });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);

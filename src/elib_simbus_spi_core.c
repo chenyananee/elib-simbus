@@ -3,8 +3,6 @@
 #include "elib_simbus_spi_core.h"
 #include <stddef.h>
 
-#define ELIB_SIMBUS_SPI_DEFAULT_MAX_WAIT 100
-
 /* ------------------------------------------------------------------ */
 /*  Internal helpers                                                    */
 /* ------------------------------------------------------------------ */
@@ -131,7 +129,6 @@ elib_simbus_err_t elib_simbus_spi_init(
     ctx->miso_pin   = cfg->miso_pin;
     ctx->cs_pin     = cfg->cs_pin;
     ctx->delay_num  = cfg->delay_num;
-    ctx->max_wait   = (cfg->max_wait == 0) ? ELIB_SIMBUS_SPI_DEFAULT_MAX_WAIT : cfg->max_wait;
     ctx->mode       = cfg->mode;
     ctx->bit_order  = cfg->bit_order;
     ctx->dummy_byte = cfg->dummy_byte;

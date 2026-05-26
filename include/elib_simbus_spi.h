@@ -31,7 +31,6 @@ typedef struct {
     uint8_t  miso_pin;
     uint8_t  cs_pin;
     uint32_t delay_num;
-    uint32_t max_wait;
     uint32_t mode;              /* 0-3 */
     uint32_t bit_order;         /* 0=MSB first, 1=LSB first */
     uint8_t  dummy_byte;        /* sent when tx_data is NULL */
@@ -52,7 +51,6 @@ typedef struct {
     uint8_t  miso_pin;
     uint8_t  cs_pin;
     uint32_t delay_num;
-    uint32_t max_wait;
     uint32_t mode;
     uint32_t bit_order;
     uint8_t  dummy_byte;
