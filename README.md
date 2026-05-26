@@ -10,7 +10,7 @@
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
 | uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | [docs/usage_uart.md](docs/usage_uart.md) |
-| ow | `elib_simbus_ow.h` | 1-Wire 主机，含存在检测/位敲/字节收发 | — |
+| ow | `elib_simbus_ow.h` | 1-Wire 主机，含存在检测/位敲/字节收发 | [docs/usage_ow.md](docs/usage_ow.md) |
 | ws2812 | `elib_simbus_ws2812.h` | WS2812/NeoPixel LED 驱动 | [docs/usage_ws2812.md](docs/usage_ws2812.md) |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
@@ -40,6 +40,7 @@ elib-simbus/
 │   ├── usage_i2c.md                   # I2C 用法
 │   ├── usage_spi.md                   # SPI 用法
 │   ├── usage_uart.md                  # UART 用法
+│   ├── usage_ow.md                    # 1-Wire 用法
 │   └── usage_ws2812.md               # WS2812 用法
 ├── LICENSE
 └── README.md
