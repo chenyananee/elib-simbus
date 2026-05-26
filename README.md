@@ -11,6 +11,7 @@
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
 | uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | [docs/usage_uart.md](docs/usage_uart.md) |
 | ow | `elib_simbus_ow.h` | 1-Wire 主机，含存在检测/位敲/字节收发 | — |
+| ws2812 | `elib_simbus_ws2812.h` | WS2812/NeoPixel LED 驱动 | — |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -24,15 +25,17 @@ elib-simbus/
 │   ├── elib_simbus_i2c.h              # I2C 模块
 │   ├── elib_simbus_spi.h              # SPI 模块
 │   ├── elib_simbus_uart.h             # UART 模块
-│   └── elib_simbus_ow.h               # 1-Wire 模块
+│   ├── elib_simbus_ow.h               # 1-Wire 模块
+│   └── elib_simbus_ws2812.h           # WS2812 驱动
 ├── src/
-│   ├── elib_simbus_{i2c,spi,uart,ow}_core.h  # 内部桥接头
-│   └── elib_simbus_{i2c,spi,uart,ow}_core.c  # 实现
+│   ├── elib_simbus_{i2c,spi,uart,ow,ws2812}_core.h  # 内部桥接头
+│   └── elib_simbus_{i2c,spi,uart,ow,ws2812}_core.c  # 实现
 ├── test/
 │   ├── test_elib_simbus_i2c.c         # 23 个 I2C 测试
 │   ├── test_elib_simbus_spi.c         # 14 个 SPI 测试
 │   ├── test_elib_simbus_uart.c        # 19 个 UART 测试
-│   └── test_elib_simbus_ow.c          # 16 个 1-Wire 测试
+│   ├── test_elib_simbus_ow.c          # 16 个 1-Wire 测试
+│   └── test_elib_simbus_ws2812.c      # 11 个 WS2812 测试
 ├── docs/
 │   ├── usage_i2c.md                   # I2C 用法
 │   ├── usage_spi.md                   # SPI 用法
@@ -72,6 +75,10 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_uart \
 # 1-Wire
 gcc -std=c99 -Wall -Wextra -Iinclude -o test_ow \
   test/test_elib_simbus_ow.c src/elib_simbus_ow_core.c && ./test_ow
+
+# WS2812
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_ws2812 \
+  test/test_elib_simbus_ws2812.c src/elib_simbus_ws2812_core.c && ./test_ws2812
 ```
 
 ### spi — SPI 主机位敲模拟
@@ -110,6 +117,15 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_ow \
 | `elib_simbus_ow_read_byte(ctx)` | 读 1 字节 |
 | `elib_simbus_ow_write(ctx, data, len, max_len)` | 写多字节 |
 | `elib_simbus_ow_read(ctx, data, len, max_len)` | 读多字节 |
+
+### ws2812 — WS2812/NeoPixel LED 驱动
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_ws2812_init(ctx, cfg)` | 初始化 |
+| `elib_simbus_ws2812_deinit(ctx)` | 反初始化 |
+| `elib_simbus_ws2812_send(ctx, data, len)` | 发送原始字节数据 |
+| `elib_simbus_ws2812_send_rgb(ctx, rgb, count)` | 发送 RGB 颜色（自动转 GRB）|
 
 ## 错误码
 
