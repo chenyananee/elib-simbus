@@ -9,6 +9,7 @@
 | err | `elib_simbus_err.h` | 统一错误码 | — |
 | util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED | — |
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
+| spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | — |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -52,6 +53,18 @@ elib-simbus/
 gcc -std=c99 -Wall -Wextra -Iinclude -o test_elib_simbus_i2c \
   test/test_elib_simbus_i2c.c src/elib_simbus_i2c_core.c && ./test_elib_simbus_i2c
 ```
+
+### spi — SPI 主机位敲模拟
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_spi_init(ctx, cfg)` | 初始化 |
+| `elib_simbus_spi_deinit(ctx)` | 反初始化 |
+| `elib_simbus_spi_transfer(ctx, tx_data, rx_data, len, max_len)` | 全双工传输 |
+| `elib_simbus_spi_write(ctx, data, len, max_len)` | 只写（丢弃接收数据）|
+| `elib_simbus_spi_read(ctx, data, len, max_len)` | 只读（发送 dummy byte）|
+| `elib_simbus_spi_cs_low(ctx)` | 断言片选（拉低 CS）|
+| `elib_simbus_spi_cs_high(ctx)` | 取消片选（拉高 CS）|
 
 ## 错误码
 

@@ -6,5 +6,6 @@
 #include "elib_simbus_util.h"
 #include "elib_simbus_err.h"
 #include "elib_simbus_i2c.h"
+#include "elib_simbus_spi.h"
 
 #endif /* ELIB_SIMBUS_H */
