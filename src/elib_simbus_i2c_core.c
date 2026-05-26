@@ -138,28 +138,22 @@ static uint8_t i2c_read_byte(elib_simbus_i2c_ctx_t *ctx, uint8_t ack)
 
 elib_simbus_err_t elib_simbus_i2c_init(
     elib_simbus_i2c_ctx_t *ctx,
-    uint8_t scl_pin,
-    uint8_t sda_pin,
-    uint32_t delay_num,
-    uint32_t max_wait,
-    elib_simbus_i2c_io_write_t io_write,
-    elib_simbus_i2c_io_read_t io_read,
-    elib_simbus_i2c_io_setdir_t io_setdir,
-    elib_simbus_i2c_delay_us_t delay_us)
+    const elib_simbus_i2c_cfg_t *cfg)
 {
-    if (ctx == NULL || io_write == NULL || io_read == NULL ||
-        io_setdir == NULL || delay_us == NULL) {
+    if (ctx == NULL || cfg == NULL ||
+        cfg->io_write == NULL || cfg->io_read == NULL ||
+        cfg->io_setdir == NULL || cfg->delay_us == NULL) {
         return ELIB_SIMBUS_ERR_INVALID_PARAM;
     }
 
-    ctx->scl_pin   = scl_pin;
-    ctx->sda_pin   = sda_pin;
-    ctx->delay_num = delay_num;
-    ctx->max_wait  = (max_wait == 0) ? ELIB_SIMBUS_I2C_DEFAULT_MAX_WAIT : max_wait;
-    ctx->io_write  = io_write;
-    ctx->io_read   = io_read;
-    ctx->io_setdir = io_setdir;
-    ctx->delay_us  = delay_us;
+    ctx->scl_pin   = cfg->scl_pin;
+    ctx->sda_pin   = cfg->sda_pin;
+    ctx->delay_num = cfg->delay_num;
+    ctx->max_wait  = (cfg->max_wait == 0) ? ELIB_SIMBUS_I2C_DEFAULT_MAX_WAIT : cfg->max_wait;
+    ctx->io_write  = cfg->io_write;
+    ctx->io_read   = cfg->io_read;
+    ctx->io_setdir = cfg->io_setdir;
+    ctx->delay_us  = cfg->delay_us;
     ctx->bit_flags.initialized = 1;
     ctx->bit_flags.timeout     = 0;
 

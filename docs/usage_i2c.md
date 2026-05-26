@@ -49,22 +49,39 @@ typedef struct {
 ### 初始化 / 反初始化
 
 ```c
+typedef struct {
+    uint8_t  scl_pin;
+    uint8_t  sda_pin;
+    uint32_t delay_num;
+    uint32_t max_wait;
+    elib_simbus_i2c_io_write_t  io_write;
+    elib_simbus_i2c_io_read_t   io_read;
+    elib_simbus_i2c_io_setdir_t io_setdir;
+    elib_simbus_i2c_delay_us_t  delay_us;
+} elib_simbus_i2c_cfg_t;
+
 elib_simbus_err_t elib_simbus_i2c_init(
     elib_simbus_i2c_ctx_t *ctx,
-    uint8_t scl_pin,
-    uint8_t sda_pin,
-    uint32_t delay_num,
-    uint32_t max_wait,
-    elib_simbus_i2c_io_write_t io_write,
-    elib_simbus_i2c_io_read_t io_read,
-    elib_simbus_i2c_io_setdir_t io_setdir,
-    elib_simbus_i2c_delay_us_t delay_us);
+    const elib_simbus_i2c_cfg_t *cfg);
 
 void elib_simbus_i2c_deinit(elib_simbus_i2c_ctx_t *ctx);
 ```
 
+`cfg` 可以是 C99 复合字面量（零时变量），不要求长期保存：
+
+```c
+elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+    .scl_pin = 0, .sda_pin = 1,
+    .delay_num = 5, .max_wait = 0,
+    .io_write = gpio_write,
+    .io_read = gpio_read,
+    .io_setdir = gpio_setdir,
+    .delay_us = delay_us,
+});
+```
+
 - `delay_num`：传入 `delay_us` 的参数。例如 100kHz I2C 需要 5µs 半周期，则 `delay_num = 5`，`delay_us(5)` 应延时 5µs。
-- `max_wait`：最大等待轮次，超过后返回 `ELIB_SIMBUS_ERR_TIMEOUT`。传 `0` 使用默认值 100。
+- `max_wait`：ACK 等待最大轮次，超时返回 `ELIB_SIMBUS_ERR_TIMEOUT`。传 `0` 使用默认值 100。
 
 ### 写数据
 
@@ -140,8 +157,11 @@ void example(void)
     uint8_t rx_buf[4] = {0};
 
     /* 初始化：SCL=pin0, SDA=pin1, 5µs 半周期, max_wait=0(默认100) */
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0,
-        gpio_write, gpio_read, gpio_setdir, delay_us);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = gpio_write, .io_read = gpio_read,
+        .io_setdir = gpio_setdir, .delay_us = delay_us });
 
     /* 向从机 0x50 写 3 字节 */
     elib_simbus_i2c_write(&ctx, 0x50, tx_buf, 3, 3);
@@ -189,9 +209,11 @@ default:
 ### 定制超时
 
 ```c
-/* max_wait=500：给复杂的多字节操作更多余量 */
-elib_simbus_i2c_init(&ctx, 0, 1, 5, 500,
-    gpio_write, gpio_read, gpio_setdir, delay_us);
+elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+    .scl_pin = 0, .sda_pin = 1,
+    .delay_num = 5, .max_wait = 500,
+    .io_write = gpio_write, .io_read = gpio_read,
+    .io_setdir = gpio_setdir, .delay_us = delay_us });
 
 /* 之后检查超时 */
 elib_simbus_err_t err = elib_simbus_i2c_write(&ctx, 0x50, data, 32, 32);

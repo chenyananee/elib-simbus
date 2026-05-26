@@ -42,6 +42,22 @@ typedef void (*elib_simbus_i2c_io_setdir_t)(uint8_t pin, uint8_t dir);
 typedef void (*elib_simbus_i2c_delay_us_t)(uint32_t us);
 
 /* ------------------------------------------------------------------ */
+/*  Configuration (zero-temporary for init)                             */
+/* ------------------------------------------------------------------ */
+
+typedef struct {
+    uint8_t  scl_pin;
+    uint8_t  sda_pin;
+    uint32_t delay_num;
+    uint32_t max_wait;
+
+    elib_simbus_i2c_io_write_t  io_write;
+    elib_simbus_i2c_io_read_t   io_read;
+    elib_simbus_i2c_io_setdir_t io_setdir;
+    elib_simbus_i2c_delay_us_t  delay_us;
+} elib_simbus_i2c_cfg_t;
+
+/* ------------------------------------------------------------------ */
 /*  Context                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -69,28 +85,14 @@ typedef struct {
 /* ------------------------------------------------------------------ */
 
 /**
- * @brief Initialize I2C master context
+ * @brief Initialize I2C master context from config
  * @param ctx User-allocated context
- * @param scl_pin SCL pin identifier
- * @param sda_pin SDA pin identifier
- * @param delay_num  Parameter passed to delay_us for internal timing
- * @param max_wait  Max wait rounds before timeout (0 = use default 100)
- * @param io_write  Write callback
- * @param io_read   Read callback
- * @param io_setdir Set-direction callback
- * @param delay_us  Microsecond delay callback
+ * @param cfg Configuration (can be a compound literal)
  * @return ELIB_SIMBUS_OK on success
  */
 elib_simbus_err_t elib_simbus_i2c_init(
     elib_simbus_i2c_ctx_t *ctx,
-    uint8_t scl_pin,
-    uint8_t sda_pin,
-    uint32_t delay_num,
-    uint32_t max_wait,
-    elib_simbus_i2c_io_write_t io_write,
-    elib_simbus_i2c_io_read_t io_read,
-    elib_simbus_i2c_io_setdir_t io_setdir,
-    elib_simbus_i2c_delay_us_t delay_us);
+    const elib_simbus_i2c_cfg_t *cfg);
 
 /**
  * @brief Deinitialize I2C master context

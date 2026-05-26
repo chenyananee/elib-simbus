@@ -232,9 +232,11 @@ static void mock_reset(void)
 
 static void test_init_valid(void)
 {
-    elib_simbus_err_t err = elib_simbus_i2c_init(
-        &ctx, 0, 1, 5, 0,
-        cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_err_t err = elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     assert(err == ELIB_SIMBUS_OK);
     assert(ctx.bit_flags.initialized == 1);
     assert(ctx.scl_pin == 0);
@@ -244,29 +246,42 @@ static void test_init_valid(void)
 
 static void test_init_null_ctx(void)
 {
-    elib_simbus_err_t err = elib_simbus_i2c_init(
-        NULL, 0, 1, 5, 0,
-        cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_err_t err = elib_simbus_i2c_init(NULL, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);
 }
 
 static void test_init_null_callbacks(void)
 {
     elib_simbus_err_t err;
-    err = elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, NULL, cb_read, cb_setdir, cb_delay);
+    err = elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin=0, .sda_pin=1, .delay_num=5, .max_wait=0,
+        .io_write=NULL, .io_read=cb_read, .io_setdir=cb_setdir, .delay_us=cb_delay });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);
-    err = elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, NULL, cb_setdir, cb_delay);
+    err = elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin=0, .sda_pin=1, .delay_num=5, .max_wait=0,
+        .io_write=cb_write, .io_read=NULL, .io_setdir=cb_setdir, .delay_us=cb_delay });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);
-    err = elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, NULL, cb_delay);
+    err = elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin=0, .sda_pin=1, .delay_num=5, .max_wait=0,
+        .io_write=cb_write, .io_read=cb_read, .io_setdir=NULL, .delay_us=cb_delay });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);
-    err = elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, NULL);
+    err = elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin=0, .sda_pin=1, .delay_num=5, .max_wait=0,
+        .io_write=cb_write, .io_read=cb_read, .io_setdir=cb_setdir, .delay_us=NULL });
     assert(err == ELIB_SIMBUS_ERR_INVALID_PARAM);
 }
 
 static void test_deinit(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0,
-        cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     assert(ctx.bit_flags.initialized == 1);
     elib_simbus_i2c_deinit(&ctx);
     assert(ctx.bit_flags.initialized == 0);
@@ -285,7 +300,11 @@ static void test_write_null_ctx(void)
 
 static void test_write_null_data(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     assert(elib_simbus_i2c_write(&ctx, 0x50, NULL, 1, 1) == ELIB_SIMBUS_ERR_INVALID_PARAM);
 }
 
@@ -297,7 +316,11 @@ static void test_write_not_initialized(void)
 
 static void test_write_exceed_max(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d[4] = {1, 2, 3, 4};
     assert(elib_simbus_i2c_write(&ctx, 0x50, d, 4, 2) == ELIB_SIMBUS_ERR_EXCEED_MAX);
 }
@@ -316,14 +339,22 @@ static void test_read_not_initialized(void)
 
 static void test_read_exceed_max(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d[4] = {0};
     assert(elib_simbus_i2c_read(&ctx, 0x50, d, 4, 2) == ELIB_SIMBUS_ERR_EXCEED_MAX);
 }
 
 static void test_write_mem_invalid_len(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d = 0xAA;
     assert(elib_simbus_i2c_write_mem(&ctx, 0x50, 0, 0, &d, 1, 1) == ELIB_SIMBUS_ERR_INVALID_PARAM);
     assert(elib_simbus_i2c_write_mem(&ctx, 0x50, 0, 5, &d, 1, 1) == ELIB_SIMBUS_ERR_INVALID_PARAM);
@@ -331,7 +362,11 @@ static void test_write_mem_invalid_len(void)
 
 static void test_read_mem_invalid_len(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 5, 0, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 5, .max_wait = 0,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d = 0;
     assert(elib_simbus_i2c_read_mem(&ctx, 0x50, 0, 0, &d, 1, 1) == ELIB_SIMBUS_ERR_INVALID_PARAM);
     assert(elib_simbus_i2c_read_mem(&ctx, 0x50, 0, 5, &d, 1, 1) == ELIB_SIMBUS_ERR_INVALID_PARAM);
@@ -343,7 +378,11 @@ static void test_read_mem_invalid_len(void)
 
 static void test_write_success(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     expect_dev_ack = 1;
     expect_data_ack = 1;
 
@@ -359,14 +398,22 @@ static void test_write_success(void)
 
 static void test_write_zero_len(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d = 0;
     assert(elib_simbus_i2c_write(&ctx, 0x50, &d, 0, 1) == ELIB_SIMBUS_OK);
 }
 
 static void test_write_nack(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     expect_dev_ack = 0;
 
     uint8_t d = 0x55;
@@ -376,7 +423,11 @@ static void test_write_nack(void)
 
 static void test_read_success(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
 
     uint8_t expected[] = {0xAA, 0xBB, 0xCC};
     slave_fill_mem(expected, 3);
@@ -391,14 +442,22 @@ static void test_read_success(void)
 
 static void test_read_zero_len(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d = 0;
     assert(elib_simbus_i2c_read(&ctx, 0x50, &d, 0, 1) == ELIB_SIMBUS_OK);
 }
 
 static void test_read_nack(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     expect_dev_ack = 0;
 
     uint8_t buf[1] = {0};
@@ -407,7 +466,11 @@ static void test_read_nack(void)
 
 static void test_write_mem_success(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
 
     expect_mem_addr_len = 2;
     uint8_t data[] = {0xDE, 0xAD, 0xBE, 0xEF};
@@ -424,14 +487,22 @@ static void test_write_mem_success(void)
 
 static void test_write_mem_zero_len(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     uint8_t d = 0;
     assert(elib_simbus_i2c_write_mem(&ctx, 0x50, 0, 1, &d, 0, 1) == ELIB_SIMBUS_OK);
 }
 
 static void test_read_mem_success(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 500, cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 500,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
 
     /* Fill mem so that position 0 onward has known data */
     uint8_t fill[] = {0xA1, 0xA2, 0xA3, 0xA4};
@@ -449,8 +520,11 @@ static void test_read_mem_success(void)
 
 static void test_timeout(void)
 {
-    elib_simbus_i2c_init(&ctx, 0, 1, 1, 3,
-        cb_write, cb_read, cb_setdir, cb_delay);
+    elib_simbus_i2c_init(&ctx, &(elib_simbus_i2c_cfg_t){
+        .scl_pin = 0, .sda_pin = 1,
+        .delay_num = 1, .max_wait = 3,
+        .io_write = cb_write, .io_read = cb_read,
+        .io_setdir = cb_setdir, .delay_us = cb_delay });
     expect_dev_ack = 0;
 
     uint8_t d = 0x55;
