@@ -4,11 +4,11 @@
 
 ## 模块列表
 
-| 模块 | 头文件 | 说明 |
-|------|--------|------|
-| err | `elib_simbus_err.h` | 统一错误码 |
-| util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED |
-| i2c | `elib_simbus_i2c.h` | I2C 主机位敲（Bit-Bang）模拟 |
+| 模块 | 头文件 | 说明 | 用法文档 |
+|------|--------|------|----------|
+| err | `elib_simbus_err.h` | 统一错误码 | — |
+| util | `elib_simbus_util.h` | MIN/MAX/CLAMP/BIT/CONTAINER_OF/ARRAY_SIZE/WEAK/UNUSED | — |
+| i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -32,6 +32,19 @@ elib-simbus/
 ├── LICENSE
 └── README.md
 ```
+
+## 功能列表
+
+### i2c — I2C 主机位敲模拟
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_i2c_init(ctx, scl_pin, sda_pin, delay_num, max_wait, io_write, io_read, io_setdir, delay_us)` | 初始化 |
+| `elib_simbus_i2c_deinit(ctx)` | 反初始化 |
+| `elib_simbus_i2c_write(ctx, dev_addr, data, len, max_len)` | 写数据到从机 |
+| `elib_simbus_i2c_read(ctx, dev_addr, data, len, max_len)` | 从从机读数据 |
+| `elib_simbus_i2c_write_mem(ctx, dev_addr, mem_addr, mem_addr_len, data, len, max_len)` | 写从机寄存器/存储器 |
+| `elib_simbus_i2c_read_mem(ctx, dev_addr, mem_addr, mem_addr_len, data, len, max_len)` | 读从机寄存器/存储器 |
 
 ## 构建与测试
 
