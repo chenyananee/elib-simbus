@@ -10,6 +10,7 @@
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
 | uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | [docs/usage_uart.md](docs/usage_uart.md) |
+| ow | `elib_simbus_ow.h` | 1-Wire 主机，含存在检测/位敲/字节收发 | — |
 
 用户只需 `#include "elib_simbus.h"` 即可引入全部模块，也可单独引用子模块头文件。
 
@@ -22,14 +23,16 @@ elib-simbus/
 │   ├── elib_simbus_err.h              # 错误码
 │   ├── elib_simbus_i2c.h              # I2C 模块
 │   ├── elib_simbus_spi.h              # SPI 模块
-│   └── elib_simbus_uart.h             # UART 模块
+│   ├── elib_simbus_uart.h             # UART 模块
+│   └── elib_simbus_ow.h               # 1-Wire 模块
 ├── src/
-│   ├── elib_simbus_{i2c,spi,uart}_core.h   # 内部桥接头
-│   └── elib_simbus_{i2c,spi,uart}_core.c   # 实现
+│   ├── elib_simbus_{i2c,spi,uart,ow}_core.h  # 内部桥接头
+│   └── elib_simbus_{i2c,spi,uart,ow}_core.c  # 实现
 ├── test/
 │   ├── test_elib_simbus_i2c.c         # 23 个 I2C 测试
 │   ├── test_elib_simbus_spi.c         # 14 个 SPI 测试
-│   └── test_elib_simbus_uart.c        # 19 个 UART 测试
+│   ├── test_elib_simbus_uart.c        # 19 个 UART 测试
+│   └── test_elib_simbus_ow.c          # 16 个 1-Wire 测试
 ├── docs/
 │   ├── usage_i2c.md                   # I2C 用法
 │   ├── usage_spi.md                   # SPI 用法
@@ -65,6 +68,10 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_spi \
 # UART
 gcc -std=c99 -Wall -Wextra -Iinclude -o test_uart \
   test/test_elib_simbus_uart.c src/elib_simbus_uart_core.c && ./test_uart
+
+# 1-Wire
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_ow \
+  test/test_elib_simbus_ow.c src/elib_simbus_ow_core.c && ./test_ow
 ```
 
 ### spi — SPI 主机位敲模拟
@@ -89,6 +96,20 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_uart \
 | `elib_simbus_uart_getchar(ctx)` | 接收 1 字节（返回 -1 超时）|
 | `elib_simbus_uart_write(ctx, data, len, max_len)` | 发送多字节 |
 | `elib_simbus_uart_read(ctx, data, len, max_len)` | 接收多字节（返回实收数）|
+
+### ow — 1-Wire 主机
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_ow_init(ctx, cfg)` | 初始化 |
+| `elib_simbus_ow_deinit(ctx)` | 反初始化 |
+| `elib_simbus_ow_reset(ctx)` | 总线复位 + 存在检测（返回 1/0/-1）|
+| `elib_simbus_ow_write_bit(ctx, bit)` | 写 1 位 |
+| `elib_simbus_ow_read_bit(ctx)` | 读 1 位 |
+| `elib_simbus_ow_write_byte(ctx, byte)` | 写 1 字节（LSB first）|
+| `elib_simbus_ow_read_byte(ctx)` | 读 1 字节 |
+| `elib_simbus_ow_write(ctx, data, len, max_len)` | 写多字节 |
+| `elib_simbus_ow_read(ctx, data, len, max_len)` | 读多字节 |
 
 ## 错误码
 
