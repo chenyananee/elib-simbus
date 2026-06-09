@@ -2,20 +2,19 @@
 
 头文件：`elib_simbus_uart.h`（通过 `elib_simbus.h` 自动引入）
 
-纯软件位敲（Bit-Bang）UART 收发器，支持标准异步串行协议。
+状态机驱动的纯软件位敲（Bit-Bang）UART 收发器。TX/RX 状态机独立，用户在定时器中断中分别调用 `poll_tx` / `poll_rx` 推进，每次调用最多推进一个位。
 
 ---
 
 ## 原理
 
-与 I2C/SPI 相同的回调模式：
+与 I2C/SPI 相同的回调模式，但无需 `delay_us`——时序由用户外部传入的 `elapsed_ns` 驱动：
 
 | 回调 | 说明 |
 |------|------|
 | `io_write(pin, level)` | 设置引脚输出电平 |
 | `io_read(pin)` | 读取引脚电平 |
-| `io_setdir(pin, dir)` | 设置引脚方向 |
-| `delay_us(us)` | 微秒级延时 |
+| `rx_callback(ctx, byte)` | 每收到一个字节时回调 |
 
 引脚分配：
 
@@ -32,18 +31,28 @@
 typedef struct {
     uint8_t  tx_pin;
     uint8_t  rx_pin;
-    uint32_t bit_time_us;       /* 位时间 µs = 1000000 / baud */
+    uint32_t bit_time_ns;       /* 位时间 ns = 1000000000 / baud */
     uint32_t data_bits;         /* 5-9，默认 8 */
     uint32_t parity;            /* 0=none, 1=odd, 2=even */
     uint32_t stop_bits;         /* 1 或 2 */
-    uint32_t timeout_rounds;    /* RX 起始位检测超时轮数 */
 
-    elib_simbus_uart_io_write_t  io_write;
-    elib_simbus_uart_io_read_t   io_read;
-    elib_simbus_uart_io_setdir_t io_setdir;
-    elib_simbus_uart_delay_us_t  delay_us;
+    elib_simbus_uart_io_write_t    io_write;
+    elib_simbus_uart_io_read_t     io_read;
+    elib_simbus_uart_rx_callback_t rx_callback;
 } elib_simbus_uart_cfg_t;
 ```
+
+常见波特率 `bit_time_ns` 值：
+
+| 波特率 | bit_time_ns |
+|--------|-------------|
+| 9600   | 104167 |
+| 19200  | 52083 |
+| 38400  | 26042 |
+| 57600  | 17361 |
+| 115200 | 8681 |
+| 230400 | 4340 |
+| 1000000 | 1000 |
 
 ---
 
@@ -62,72 +71,103 @@ void elib_simbus_uart_deinit(elib_simbus_uart_ctx_t *ctx);
 ```c
 elib_simbus_uart_init(&ctx, &(elib_simbus_uart_cfg_t){
     .tx_pin = 0, .rx_pin = 1,
-    .bit_time_us = 1000000 / 115200,   /* 115200 baud → ~8.7µs */
+    .bit_time_ns = 8681,        /* 115200 baud */
     .data_bits = 8, .parity = 0, .stop_bits = 1,
     .io_write = gpio_write, .io_read = gpio_read,
-    .io_setdir = gpio_setdir, .delay_us = delay_us,
+    .rx_callback = on_rx_byte,
 });
 ```
-
-### 单字节收发
-
-```c
-/* 发送 */
-elib_simbus_err_t elib_simbus_uart_putchar(
-    elib_simbus_uart_ctx_t *ctx, uint8_t byte);
-
-/* 接收：返回 0-255 成功，-1 超时 */
-int32_t elib_simbus_uart_getchar(
-    elib_simbus_uart_ctx_t *ctx);
-```
-
-`getchar` 阻塞等待 RX 起始位（下降沿），检测到后采样数据位。若在 `timeout_rounds` 内未检测到起始位，返回 `-1` 并置 `bit_flags.timeout`。
-
-### 多字节收发
-
-```c
-elib_simbus_err_t elib_simbus_uart_write(
-    elib_simbus_uart_ctx_t *ctx,
-    const void *data,
-    uint32_t len,
-    uint32_t max_len);
-
-/* 返回实际接收字节数，超时返回 0 */
-int32_t elib_simbus_uart_read(
-    elib_simbus_uart_ctx_t *ctx,
-    void *data,
-    uint32_t len,
-    uint32_t max_len);
-```
-
-`read` 内部循环调用 `getchar`，超时则提前返回已收字节数。
-
----
-
-## 示例
 
 ### 发送
 
 ```c
-elib_simbus_uart_putchar(&ctx, 'A');
+/* 启动发送（单字节 len=1，多字节传实际长度） */
+elib_simbus_err_t elib_simbus_uart_start_tx(
+    elib_simbus_uart_ctx_t *ctx, const uint8_t *data, uint32_t len);
+
+/* 查询是否正在发送 */
+uint8_t elib_simbus_uart_tx_busy(elib_simbus_uart_ctx_t *ctx);
 ```
 
-### 接收
+`start_tx` 将 TX 引脚拉低（起始位），进入发送状态。若 TX 正忙返回 `ELIB_SIMBUS_ERR_INVALID_PARAM`。多字节发送时字节间无缝衔接（无额外空闲间隔）。
+
+### 状态机轮询
 
 ```c
-int32_t c = elib_simbus_uart_getchar(&ctx);
-if (c >= 0) {
-    /* 收到字节 */
-} else {
-    /* 超时 */
+/* 推进 TX 状态机，每次最多推进一个位 */
+void elib_simbus_uart_poll_tx(
+    elib_simbus_uart_ctx_t *ctx, uint32_t elapsed_ns);
+
+/* 推进 RX 状态机，每次最多推进一个位 */
+void elib_simbus_uart_poll_rx(
+    elib_simbus_uart_ctx_t *ctx, uint32_t elapsed_ns);
+```
+
+在定时器中断中调用，传入自上次 poll 以来经过的纳秒数。TX 和 RX 可独立调用，每次调用最多推进一个位。
+
+---
+
+## 状态机
+
+### TX 状态机
+
+```
+IDLE ──(start_tx)──> START_BIT ──> DATA_BIT[0..N] ──> [PARITY] ──> STOP_BIT ──> IDLE
+         TX=低         TX=数据位      TX=校验位        TX=高
+```
+
+### RX 状态机
+
+```
+IDLE ──(下降沿)──> START_BIT ──> DATA_BIT[0..N] ──> [PARITY] ──> STOP_BIT ──> 回调 ──> IDLE
+       采样RX引脚    等半位采样     采样数据位         跳过         采样停止位    rx_callback
+```
+
+RX 在 IDLE 状态每次 poll 都采样 RX 引脚，检测到下降沿（高→低）后启动接收。采样点位于每位中心（1.5, 2.5, 3.5... bit times from edge）。
+
+---
+
+## 使用示例
+
+### 完整示例
+
+```c
+/* RX 回调：每收到一字节自动调用 */
+void on_rx_byte(elib_simbus_uart_ctx_t *ctx, uint8_t byte)
+{
+    rx_buf[rx_cnt++] = byte;
 }
-```
 
-### 发送字符串
+/* 初始化 */
+elib_simbus_uart_ctx_t uart_ctx;
+elib_simbus_uart_init(&uart_ctx, &(elib_simbus_uart_cfg_t){
+    .tx_pin = 0, .rx_pin = 1,
+    .bit_time_ns = 8681,        /* 115200 baud */
+    .data_bits = 8, .parity = 0, .stop_bits = 1,
+    .io_write = gpio_write, .io_read = gpio_read,
+    .rx_callback = on_rx_byte,
+});
 
-```c
-const char *msg = "Hello\n";
-elib_simbus_uart_write(&ctx, msg, strlen(msg), strlen(msg));
+/* 发送单字节 */
+uint8_t ch = 'A';
+elib_simbus_uart_start_tx(&uart_ctx, &ch, 1);
+
+/* 发送多字节 */
+const uint8_t msg[] = {0x01, 0x02, 0x03};
+elib_simbus_uart_start_tx(&uart_ctx, msg, sizeof(msg));
+
+/* 定时器中断处理函数 */
+void timer_isr(void)
+{
+    uint32_t elapsed = timer_get_elapsed_ns();  /* 用户实现 */
+    elib_simbus_uart_poll_tx(&uart_ctx, elapsed);
+    elib_simbus_uart_poll_rx(&uart_ctx, elapsed);
+}
+
+/* 主循环检查发送状态 */
+while (elib_simbus_uart_tx_busy(&uart_ctx)) {
+    /* 等待发送完成 */
+}
 ```
 
 ---
@@ -161,16 +201,12 @@ TX/RX: ‾‾\__/‾\__/‾‾\__/‾‾‾‾\__/‾‾‾‾‾
 
 ### 发送时序
 
-每字节耗时 = `(1 + data_bits + parity + stop_bits) × bit_time_us`
+每字节耗时 = `(1 + data_bits + parity + stop_bits) × bit_time_ns`
 
 常见配置耗时：
 
 | 配置 | 每字节耗时 |
 |------|-----------|
-| 8N1 @ 115200 | 10 × 8.7µs ≈ 87µs |
-| 8N1 @ 9600 | 10 × 104µs ≈ 1.04ms |
-| 8E1 @ 115200 | 11 × 8.7µs ≈ 96µs |
-
-### 超时机制
-
-`getchar` 在 RX 起始位检测阶段轮询 RX 引脚。每轮调用一次 `delay_us(bit_time_us)`，超过 `timeout_rounds` 轮仍未检测到下降沿则超时。默认 `timeout_rounds = 10000`，对于 115200 baud 约等待 87ms。
+| 8N1 @ 115200 | 10 × 8681ns ≈ 87µs |
+| 8N1 @ 9600 | 10 × 104167ns ≈ 1.04ms |
+| 8E1 @ 115200 | 11 × 8681ns ≈ 95µs |

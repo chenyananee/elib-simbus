@@ -7,6 +7,7 @@
 #include "elib_simbus_i2c.h"
 #include "elib_simbus_spi.h"
 #include "elib_simbus_uart.h"
+#include "elib_simbus_sb.h"
 #include "elib_simbus_ow.h"
 #include "elib_simbus_ws2812.h"
 

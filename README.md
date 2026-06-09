@@ -9,7 +9,8 @@
 | err | `elib_simbus_err.h` | 统一错误码 | — |
 | i2c | `elib_simbus_i2c.h` | I2C 主机位敲模拟 | [docs/usage_i2c.md](docs/usage_i2c.md) |
 | spi | `elib_simbus_spi.h` | SPI 主机位敲模拟，支持 Mode 0-3 | [docs/usage_spi.md](docs/usage_spi.md) |
-| uart | `elib_simbus_uart.h` | UART 位敲收发，支持 5-9 位/奇偶校验/停位 | [docs/usage_uart.md](docs/usage_uart.md) |
+| uart | `elib_simbus_uart.h` | UART 位敲收发，状态机驱动，支持 5-9 位/奇偶校验 | [docs/usage_uart.md](docs/usage_uart.md) |
+| sb | `elib_simbus_sb.h` | 自定义单总线协议，状态机驱动，15 位空闲检测 | [docs/usage_sb.md](docs/usage_sb.md) |
 | ow | `elib_simbus_ow.h` | 1-Wire 主机，含存在检测/位敲/字节收发 | [docs/usage_ow.md](docs/usage_ow.md) |
 | ws2812 | `elib_simbus_ws2812.h` | WS2812/NeoPixel LED 驱动 | [docs/usage_ws2812.md](docs/usage_ws2812.md) |
 
@@ -25,21 +26,24 @@ elib-simbus/
 │   ├── elib_simbus_i2c.h              # I2C 模块
 │   ├── elib_simbus_spi.h              # SPI 模块
 │   ├── elib_simbus_uart.h             # UART 模块
+│   ├── elib_simbus_sb.h               # 单总线协议模块
 │   ├── elib_simbus_ow.h               # 1-Wire 模块
 │   └── elib_simbus_ws2812.h           # WS2812 驱动
 ├── src/
-│   ├── elib_simbus_{i2c,spi,uart,ow,ws2812}_core.h  # 内部桥接头
-│   └── elib_simbus_{i2c,spi,uart,ow,ws2812}_core.c  # 实现
+│   ├── elib_simbus_{i2c,spi,uart,sb,ow,ws2812}_core.h  # 内部桥接头
+│   └── elib_simbus_{i2c,spi,uart,sb,ow,ws2812}_core.c  # 实现
 ├── test/
 │   ├── test_elib_simbus_i2c.c         # 23 个 I2C 测试
 │   ├── test_elib_simbus_spi.c         # 14 个 SPI 测试
-│   ├── test_elib_simbus_uart.c        # 19 个 UART 测试
+│   ├── test_elib_simbus_uart.c        # 18 个 UART 测试
+│   ├── test_elib_simbus_sb.c          # 15 个单总线测试
 │   ├── test_elib_simbus_ow.c          # 16 个 1-Wire 测试
 │   └── test_elib_simbus_ws2812.c      # 11 个 WS2812 测试
 ├── docs/
 │   ├── usage_i2c.md                   # I2C 用法
 │   ├── usage_spi.md                   # SPI 用法
 │   ├── usage_uart.md                  # UART 用法
+│   ├── usage_sb.md                    # 单总线协议用法
 │   ├── usage_ow.md                    # 1-Wire 用法
 │   └── usage_ws2812.md               # WS2812 用法
 ├── LICENSE
@@ -74,6 +78,10 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_spi \
 gcc -std=c99 -Wall -Wextra -Iinclude -o test_uart \
   test/test_elib_simbus_uart.c src/elib_simbus_uart_core.c && ./test_uart
 
+# SB (单总线)
+gcc -std=c99 -Wall -Wextra -Iinclude -o test_sb \
+  test/test_elib_simbus_sb.c src/elib_simbus_sb_core.c && ./test_sb
+
 # 1-Wire
 gcc -std=c99 -Wall -Wextra -Iinclude -o test_ow \
   test/test_elib_simbus_ow.c src/elib_simbus_ow_core.c && ./test_ow
@@ -95,16 +103,28 @@ gcc -std=c99 -Wall -Wextra -Iinclude -o test_ws2812 \
 | `elib_simbus_spi_cs_low(ctx)` | 断言片选（拉低 CS）|
 | `elib_simbus_spi_cs_high(ctx)` | 取消片选（拉高 CS）|
 
-### uart — UART 位敲收发
+### uart — UART 状态机驱动位敲收发
 
 | 函数 | 说明 |
 |------|------|
 | `elib_simbus_uart_init(ctx, cfg)` | 初始化 |
 | `elib_simbus_uart_deinit(ctx)` | 反初始化 |
-| `elib_simbus_uart_putchar(ctx, byte)` | 发送 1 字节 |
-| `elib_simbus_uart_getchar(ctx)` | 接收 1 字节（返回 -1 超时）|
-| `elib_simbus_uart_write(ctx, data, len, max_len)` | 发送多字节 |
-| `elib_simbus_uart_read(ctx, data, len, max_len)` | 接收多字节（返回实收数）|
+| `elib_simbus_uart_start_tx(ctx, data, len)` | 启动发送（单字节 len=1）|
+| `elib_simbus_uart_poll_tx(ctx, elapsed_ns)` | 推进 TX 状态机（每调用最多 1 位）|
+| `elib_simbus_uart_poll_rx(ctx, elapsed_ns)` | 推进 RX 状态机（每调用最多 1 位）|
+| `elib_simbus_uart_tx_busy(ctx)` | 查询 TX 是否进行中 |
+
+### sb — 自定义单总线协议
+
+帧格式：`START(low) + D0..D7 + P0..P3 + STOP(high)`，4 位校验位。
+
+| 函数 | 说明 |
+|------|------|
+| `elib_simbus_sb_init(ctx, cfg)` | 初始化（引脚设为输入）|
+| `elib_simbus_sb_deinit(ctx)` | 反初始化（释放总线）|
+| `elib_simbus_sb_start_tx(ctx, data, len)` | 启动发送（先检测 15 位空闲）|
+| `elib_simbus_sb_poll(ctx, elapsed_ns)` | 推进状态机（TX/RX 互斥）|
+| `elib_simbus_sb_tx_busy(ctx)` | 查询 TX 是否进行中 |
 
 ### ow — 1-Wire 主机
 
